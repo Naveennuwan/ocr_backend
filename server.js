@@ -21,9 +21,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://smartocr.netlify.app', 'https://*.netlify.app']
-    : ['http://localhost:3000', 'http://localhost:3001'],
+  origin: 'https://smartocr.netlify.app',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
