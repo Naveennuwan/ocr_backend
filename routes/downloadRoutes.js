@@ -1,5 +1,6 @@
+// downloadRoutes.js
 import express from 'express';
-import { DownloadController } from '../controllers/downloadController.js';
+import {DownloadController} from '../controllers/downloadController.js'; // Remove { }
 
 const router = express.Router();
 

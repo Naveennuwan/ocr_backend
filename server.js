@@ -10,32 +10,47 @@ import { errorHandler } from "./middleware/errorMiddleware.js";
 dotenv.config();
 
 process.on("uncaughtException", (err) => {
-  console.error("UNCAUGHT EXCEPTION:", err);
+  console.error("❌ UNCAUGHT EXCEPTION:", err);
 });
 
 process.on("unhandledRejection", (reason) => {
-  console.error("UNHANDLED PROMISE REJECTION:", reason);
+  console.error("❌ UNHANDLED PROMISE REJECTION:", reason);
 });
 
 const app = express();
 
 // Middleware
 app.use(cors({
-  origin: 'https://smartocr.netlify.app',
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://smartocr.netlify.app', 'https://*.netlify.app']
+    : ['http://localhost:3000', 'http://localhost:3001'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Ensure directories exist
-FileService.ensureDirectoryExists('uploads');
-FileService.ensureDirectoryExists('exports');
+console.log('📁 Initializing directories...');
+FileService.ensureDirectoryExists(process.env.UPLOAD_DIR || 'uploads');
+FileService.ensureDirectoryExists(process.env.EXPORT_DIR || 'exports');
 
 // Routes
 app.use('/api/extract', extractRoutes);
 app.use('/api/download', downloadRoutes);
 app.use('/', healthRoutes);
+
+// Test endpoint for file upload
+app.get('/api/test-upload', (req, res) => {
+  res.send(`
+    <h1>Test File Upload</h1>
+    <form action="/api/extract" method="post" enctype="multipart/form-data">
+      <input type="file" name="file" required>
+      <button type="submit">Upload</button>
+    </form>
+  `);
+});
 
 // Global error handler
 app.use(errorHandler);
@@ -48,13 +63,16 @@ app.listen(PORT, () => {
   ║                                                       ║
   ║   SmartHand Document Processor 🚀                    ║
   ║                                                       ║
-  ║   Server running on port ${PORT}                      ║
+  ║   ✅ Server running on port ${PORT}                    ║
+  ║   🌍 Environment: ${process.env.NODE_ENV || 'development'} ║
   ║                                                       ║
-  ║   📁 Uploads: ./uploads                              ║
-  ║   📁 Exports: ./exports                              ║
+  ║   📁 Uploads: ${process.env.UPLOAD_DIR || 'uploads'}  ║
+  ║   📁 Exports: ${process.env.EXPORT_DIR || 'exports'}  ║
   ║                                                       ║
-  ║   🌐 Open in browser: http://localhost:${PORT}       ║
-  ║   🧪 Test upload: http://localhost:${PORT}/api/test-upload ║
+  ║   ✨ Now with text editing support!                  ║
+  ║                                                       ║
+  ║   🌐 Open: http://localhost:${PORT}                  ║
+  ║   🧪 Test: http://localhost:${PORT}/api/test-upload  ║
   ║                                                       ║
   ╚═══════════════════════════════════════════════════════╝
   `);
